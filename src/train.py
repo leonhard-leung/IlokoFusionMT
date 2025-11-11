@@ -118,8 +118,8 @@ def main():
         tokenizer_src=tokenizer,
         tokenizer_tgt=tokenizer,
         batch_size=config.BATCH_SIZE,
-        test_split=0.2,
-        val_split=0.1,
+        evaluation_split=config.EVALUATION_SPLIT,
+        validation_split=config.VALIDATION_SPLIT,
         max_len=config.MAX_SEQ_LEN,
         num_workers=config.NUM_WORKERS,
         pin_memory=config.PIN_MEMORY,
@@ -127,7 +127,7 @@ def main():
     data_module.setup()
 
     train_loader = data_module.train_dataloader()
-    test_loader = data_module.test_dataloader()
+    validation_loader = data_module.validation_dataloader()
 
     optimizer = AdamW(
         model.parameters(),
@@ -141,7 +141,7 @@ def main():
         print(f"Epoch {epoch + 1}/{config.NUM_EPOCHS}")
 
         train_loss = train_epoch(model, train_loader, optimizer, device)
-        val_loss = validate_epoch(model, test_loader, device)
+        val_loss = validate_epoch(model, validation_loader, device)
 
         print(f"Train Loss: {train_loss:.4f} | Validation Loss: {val_loss:.4f}")
         print(f"===================================")

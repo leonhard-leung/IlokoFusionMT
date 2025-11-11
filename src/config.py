@@ -31,8 +31,8 @@ WEIGHT_DECAY = 1e-5
 # =============
 # Data
 # =============
-TEST_SPLIT = 0.2
-VAL_SPLIT = 0.1
+VALIDATION_SPLIT = 0.2
+EVALUATION_SPLIT = 0.1
 SHUFFLE = True
 NUM_WORKERS = 4
 PIN_MEMORY = True

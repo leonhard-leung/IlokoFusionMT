@@ -63,8 +63,8 @@ class TranslationDataModule:
             tokenizer_src,
             tokenizer_tgt,
             batch_size=32,
-            test_split=0.2,
-            val_split=0.1,
+            evaluation_split=0.1,
+            validation_split=0.2,
             max_len=128,
             num_workers=4,
             pin_memory=True
@@ -73,11 +73,14 @@ class TranslationDataModule:
         self.tokenizer_src = tokenizer_src
         self.tokenizer_tgt = tokenizer_tgt
         self.batch_size = batch_size
-        self.test_split = test_split
-        self.val_split = val_split
+        self.evaluation_split = evaluation_split
+        self.validation_split = validation_split
         self.max_len = max_len
         self.num_workers = num_workers
         self.pin_memory = pin_memory
+        self.train_dataset = None
+        self.validation_dataset = None
+        self.evaluation_dataset = None
 
     def setup(self):
         # load dataset
@@ -90,25 +93,25 @@ class TranslationDataModule:
         src_texts = iloko_texts + english_texts
         tgt_texts = english_texts + iloko_texts
 
-        # split for train_test and validation
-        src_train_test, src_val, tgt_train_test, tgt_val = train_test_split(
-            src_texts, tgt_texts, test_size=self.val_split, random_state=42
+        # split for train_val and evaluation
+        src_train_val, src_eval, tgt_train_val, tgt_eval = train_test_split(
+            src_texts, tgt_texts, test_size=self.evaluation_split
         )
 
-        src_train, src_test, tgt_train, tgt_test = train_test_split(
-            src_train_test, tgt_train_test, test_size=self.test_split, random_state=42
+        src_train, src_val, tgt_train, tgt_val = train_test_split(
+            src_train_val, tgt_train_val, test_size=self.validation_split
         )
 
         self.train_dataset = TranslationDataset(
             src_train, tgt_train, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
         )
 
-        self.test_dataset = TranslationDataset(
-            src_test, tgt_test, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
+        self.validation_dataset = TranslationDataset(
+            src_val, tgt_val, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
         )
 
-        self.val_dataset = TranslationDataset(
-            src_val, tgt_val, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
+        self.evaluation_dataset = TranslationDataset(
+            src_eval, tgt_eval, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
         )
 
     def train_dataloader(self):
@@ -120,17 +123,17 @@ class TranslationDataModule:
             pin_memory=self.pin_memory
         )
 
-    def test_dataloader(self):
+    def validation_dataloader(self):
         return DataLoader(
-            self.test_dataset,
+            self.validation_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory
         )
 
-    def val_dataloader(self):
+    def evaluation_dataloader(self):
         return DataLoader(
-            self.val_dataset,
+            self.evaluation_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             pin_memory=self.pin_memory
