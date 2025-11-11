@@ -39,8 +39,18 @@ class TranslationDataset(Dataset):
         }
 
 class TranslationDataModule:
-
-    def __init__(self, csv_path, tokenizer_src, tokenizer_tgt, batch_size=32, test_split=0.2, val_split=0.1, max_len=128):
+    def __init__(
+            self,
+            csv_path,
+            tokenizer_src,
+            tokenizer_tgt,
+            batch_size=32,
+            test_split=0.2,
+            val_split=0.1,
+            max_len=128,
+            num_workers=4,
+            pin_memory=True
+    ):
         self.csv_path = csv_path
         self.tokenizer_src = tokenizer_src
         self.tokenizer_tgt = tokenizer_tgt
@@ -48,6 +58,8 @@ class TranslationDataModule:
         self.test_split = test_split
         self.val_split = val_split
         self.max_len = max_len
+        self.num_workers = num_workers
+        self.pin_memory = pin_memory
 
     def setup(self):
         # load dataset
@@ -82,10 +94,26 @@ class TranslationDataModule:
         )
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory
+        )
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=4, pin_memory=True)
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory
+        )
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=4, pin_memory=True)
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=self.pin_memory
+        )

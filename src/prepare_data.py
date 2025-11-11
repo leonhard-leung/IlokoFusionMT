@@ -18,16 +18,17 @@ Notes:
 """
 
 from preprocessing import load_csv, clean_dataframe, save_csv
+import config
 
 def main():
-    parallel_df = load_csv("../data/raw/parallel.csv")
-    lexicon_df = load_csv("../data/raw/lexicon.csv")
+    parallel_df = load_csv(config.RAW_PARALLEL_CSV)
+    lexicon_df = load_csv(config.RAW_LEXICON_CSV)
 
     parallel_df_cleaned = clean_dataframe(parallel_df, src_col="Iloko", tgt_col="English")
     lexicon_df_cleaned = clean_dataframe(lexicon_df, src_col="Iloko", tgt_col="English")
 
-    save_csv(parallel_df_cleaned, "../data/processed/parallel_cleaned.csv")
-    save_csv(lexicon_df_cleaned, "../data/processed/lexicon_cleaned.csv")
+    save_csv(parallel_df_cleaned, config.PARALLEL_CLEANED_CSV)
+    save_csv(lexicon_df_cleaned, config.LEXICON_CLEANED_CSV)
 
     print("Data cleaned and saved...")
 
