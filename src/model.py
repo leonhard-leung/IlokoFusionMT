@@ -17,7 +17,7 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration
 
 
 class BaseNMT(nn.Module):
-    def __init__(self, model_name="t5-small"):
+    def __init__(self, model_name="t5-base"):
         super().__init__()
         self.model = T5ForConditionalGeneration.from_pretrained(model_name)
 
@@ -62,7 +62,6 @@ class LexiconPointerNMT(nn.Module):
         )
 
         generated_ids = outputs.sequences
-        tokens = self.tokenizer.decode(generated_ids[0], skip_special_tokens=True).split()
 
         final_tokens = []
         for i, token_id in enumerate(generated_ids[0]):
