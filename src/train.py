@@ -115,8 +115,7 @@ def main():
 
     data_module = TranslationDataModule(
         csv_path=config.PARALLEL_CLEANED_CSV,
-        tokenizer_src=tokenizer,
-        tokenizer_tgt=tokenizer,
+        tokenizer=tokenizer,
         batch_size=config.BATCH_SIZE,
         evaluation_split=config.EVALUATION_SPLIT,
         validation_split=config.VALIDATION_SPLIT,

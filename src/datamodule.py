@@ -7,7 +7,7 @@ parallel corpus data for neural machine translation (NMT).
 Outputs:
 1. Training DataLoader
 2. Validation DataLoader
-3. Testing DataLoader
+3. Evaluation DataLoader
 
 Notes:
     - Supports bidirectional translation (source ↔ target).
@@ -20,35 +20,35 @@ from preprocessing import load_csv
 from sklearn.model_selection import train_test_split
 
 class TranslationDataset(Dataset):
-    def __init__(self, src_texts, tgt_texts, tokenizer_src, tokenizer_tgt, max_len=128):
+    def __init__(self, src_texts, tgt_texts, tokenizer, max_len=128):
         self.src_texts = src_texts
         self.tgt_texts = tgt_texts
-        self.tokenizer_src = tokenizer_src
-        self.tokenizer_tgt = tokenizer_tgt
+        self.tokenizer = tokenizer
         self.max_len = max_len
 
     def __len__(self):
         return len(self.src_texts)
 
     def __getitem__(self, idx):
-        src = self.tokenizer_src(
+        src = self.tokenizer(
             self.src_texts[idx],
             truncation=True,
             padding="max_length",
-            max_length=self.max_len
+            max_length=self.max_len,
+            return_tensors="pt"
         )
-        tgt = self.tokenizer_tgt(
+        tgt = self.tokenizer(
             self.tgt_texts[idx],
             truncation=True,
             padding="max_length",
-            max_length=self.max_len
+            max_length=self.max_len,
+            return_tensors="pt"
         )
 
-        input_ids = torch.tensor(src["input_ids"], dtype=torch.long)
-        attention_mask = torch.tensor(src["attention_mask"], dtype=torch.long)
-        labels = torch.tensor(tgt["input_ids"], dtype=torch.long)
-
-        labels[labels == self.tokenizer_tgt.pad_token_id] = -100
+        input_ids = src["input_ids"].squeeze(0)
+        attention_mask = src["attention_mask"].squeeze(0)
+        labels = tgt["input_ids"].squeeze(0)
+        labels[labels == self.tokenizer.pad_token_id] = -100
 
         return {
             "input_ids": input_ids,
@@ -60,8 +60,7 @@ class TranslationDataModule:
     def __init__(
             self,
             csv_path,
-            tokenizer_src,
-            tokenizer_tgt,
+            tokenizer,
             batch_size=32,
             evaluation_split=0.1,
             validation_split=0.2,
@@ -70,8 +69,7 @@ class TranslationDataModule:
             pin_memory=True
     ):
         self.csv_path = csv_path
-        self.tokenizer_src = tokenizer_src
-        self.tokenizer_tgt = tokenizer_tgt
+        self.tokenizer = tokenizer
         self.batch_size = batch_size
         self.evaluation_split = evaluation_split
         self.validation_split = validation_split
@@ -103,15 +101,15 @@ class TranslationDataModule:
         )
 
         self.train_dataset = TranslationDataset(
-            src_train, tgt_train, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
+            src_train, tgt_train, self.tokenizer, max_len=self.max_len
         )
 
         self.validation_dataset = TranslationDataset(
-            src_val, tgt_val, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
+            src_val, tgt_val, self.tokenizer, max_len=self.max_len
         )
 
         self.evaluation_dataset = TranslationDataset(
-            src_eval, tgt_eval, self.tokenizer_src, self.tokenizer_tgt, max_len=self.max_len
+            src_eval, tgt_eval, self.tokenizer, max_len=self.max_len
         )
 
     def train_dataloader(self):
