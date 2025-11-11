@@ -12,6 +12,8 @@ PROCESSED_DIR = DATA_DIR / "processed"
 PARALLEL_CLEANED_CSV = PROCESSED_DIR / "parallel_cleaned.csv"
 LEXICON_CLEANED_CSV = PROCESSED_DIR / "lexicon_cleaned.csv"
 
+SAVE_DIR = Path("../checkpoints")
+
 # =============
 # Model
 # =============
@@ -25,8 +27,6 @@ BATCH_SIZE = 32
 NUM_EPOCHS = 10
 LEARNING_RATE = 2e-5
 WEIGHT_DECAY = 1e-5
-GRADIENT_ACCUMULATION_STEPS = 1
-MIXED_PRECISION = False
 
 # =============
 # Data
@@ -40,4 +40,5 @@ PIN_MEMORY = True
 # =============
 # Pointer
 # =============
+USE_POINTER = True
 POINTER_THRESHOLD = 0.5
