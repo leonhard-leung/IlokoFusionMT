@@ -14,6 +14,7 @@ Notes:
     - Handles train, test, and validation splits.
 """
 
+import torch
 from torch.utils.data import Dataset, DataLoader
 from preprocessing import load_csv
 from sklearn.model_selection import train_test_split
@@ -30,12 +31,29 @@ class TranslationDataset(Dataset):
         return len(self.src_texts)
 
     def __getitem__(self, idx):
-        src = self.tokenizer_src(self.src_texts[idx], truncation=True, padding="max_length", max_length=self.max_len)
-        tgt = self.tokenizer_tgt(self.tgt_texts[idx], truncation=True, padding="max_length", max_length=self.max_len)
+        src = self.tokenizer_src(
+            self.src_texts[idx],
+            truncation=True,
+            padding="max_length",
+            max_length=self.max_len
+        )
+        tgt = self.tokenizer_tgt(
+            self.tgt_texts[idx],
+            truncation=True,
+            padding="max_length",
+            max_length=self.max_len
+        )
+
+        input_ids = torch.tensor(src["input_ids"], dtype=torch.long)
+        attention_mask = torch.tensor(src["attention_mask"], dtype=torch.long)
+        labels = torch.tensor(tgt["input_ids"], dtype=torch.long)
+
+        labels[labels == self.tokenizer_tgt.pad_token_id] = -100
+
         return {
-            "input_ids": src["input_ids"],
-            "attention_mask": src["attention_mask"],
-            "labels": tgt["input_ids"]
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "labels": labels
         }
 
 class TranslationDataModule:
