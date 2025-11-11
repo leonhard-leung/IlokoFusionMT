@@ -59,7 +59,7 @@ def clean_dataframe(
 ) -> pd.DataFrame:
     df = df.copy()
 
-    df[src_col] = df[src_col].astype.apply(clean_text)
+    df[src_col] = df[src_col].astype(str).apply(clean_text)
     df[tgt_col] = df[tgt_col].astype(str).apply(clean_text)
 
     if drop_empty:
