@@ -32,6 +32,7 @@ from model import BaseNMT, LexiconPointerNMT
 from tqdm import tqdm
 import config
 from src.datamodule import TranslationDataModule
+from pathlib import Path
 
 
 def train_epoch(model, dataloader, optimizer, device):
@@ -51,6 +52,9 @@ def train_epoch(model, dataloader, optimizer, device):
             attention_mask=attention_mask,
             labels=labels,
         )
+
+        if config.USE_POINTER:
+            outputs, pointer_prob = outputs
 
         loss = outputs.loss
         loss.backward()
@@ -80,6 +84,9 @@ def validate_epoch(model, dataloader, device):
                 labels=labels,
             )
 
+            if config.USE_POINTER:
+                outputs, pointer_prob = outputs
+
             loss = outputs.loss
             total_loss += loss.item()
 
@@ -90,8 +97,19 @@ def validate_epoch(model, dataloader, device):
 
 def save_checkpoint(model, tokenizer, save_dir):
     os.makedirs(save_dir, exist_ok=True)
-    model.model.save_pretrained(save_dir)
-    tokenizer.save_pretrained(save_dir)
+
+    checkpoint = {
+        "model_state_dict": model.state_dict(),
+        "tokenizer": tokenizer.name_or_path,
+    }
+
+    if hasattr(model, "lexicon"):
+        checkpoint["lexicon"] = model.lexicon
+
+    torch.save(
+        checkpoint,
+        f"{save_dir}/lexicon_pointer_nmt.pt"
+    )
     print(f"Model saved to: {save_dir}")
 
 
@@ -147,7 +165,8 @@ def main():
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_checkpoint(model, tokenizer, config.SAVE_DIR + f"-{epoch + 1}")
+            save_dir = Path(config.SAVE_DIR) / f"epoch-{epoch + 1}"
+            save_checkpoint(model, tokenizer, save_dir)
 
     print("Training Complete...")
 
