@@ -23,7 +23,6 @@ Usage:
     python src/train.py
 """
 
-import os
 import pandas as pd
 import torch
 from torch.optim import AdamW
@@ -32,7 +31,7 @@ from model import BaseNMT, LexiconPointerNMT
 from tqdm import tqdm
 import config
 from src.datamodule import TranslationDataModule
-from pathlib import Path
+from utils import save_checkpoint
 
 
 def train_epoch(model, dataloader, optimizer, device):
@@ -95,24 +94,6 @@ def validate_epoch(model, dataloader, device):
         return total_loss / len(dataloader)
 
 
-def save_checkpoint(model, tokenizer, save_dir):
-    os.makedirs(save_dir, exist_ok=True)
-
-    checkpoint = {
-        "model_state_dict": model.state_dict(),
-        "tokenizer": tokenizer.name_or_path,
-    }
-
-    if hasattr(model, "lexicon"):
-        checkpoint["lexicon"] = model.lexicon
-
-    torch.save(
-        checkpoint,
-        f"{save_dir}/lexicon_pointer_nmt.pt"
-    )
-    print(f"Model saved to: {save_dir}")
-
-
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -165,8 +146,12 @@ def main():
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            save_dir = Path(config.SAVE_DIR) / f"epoch-{epoch + 1}"
-            save_checkpoint(model, tokenizer, save_dir)
+
+        save_checkpoint(
+            model, tokenizer,
+            f"{config.CHECKPOINT_DIR}\\{'LexiconPointerNMT' if config.USE_POINTER else 'BaseNMT'}",
+            f"epoch-{epoch + 1}.pt"
+        )
 
     print("Training Complete...")
 
