@@ -21,7 +21,6 @@ import re
 import pandas as pd
 
 # ======== text cleaning ========
-
 def _whitespace_cleaning(text: str) -> str:
     if not isinstance(text, str):
         return text
@@ -44,7 +43,6 @@ def clean_text(text: str) -> str:
     return text
 
 # ======== dataframe pipeline ========
-
 def clean_dataframe(
         df: pd.DataFrame,
         src_col: str = "Iloko",
@@ -62,9 +60,7 @@ def clean_dataframe(
     df = df.reset_index(drop=True)
     return df
 
-
 # ======== file handling ========
-
 def load_csv(path: str) -> pd.DataFrame:
     return pd.read_csv(path)
 
