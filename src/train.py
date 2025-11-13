@@ -31,10 +31,20 @@ from model import BaseNMT, LexiconPointerNMT
 from tqdm import tqdm
 import config
 from src.datamodule import TranslationDataModule
-from utils import save_checkpoint
+from utils import load_latest_checkpoint, save_checkpoint
 
 
 def train_epoch(model, dataloader, optimizer, device):
+    """
+    Performs one epoch of training on the given model using the provided dataloader.
+
+    :param model: PyTorch model to train
+    :param dataloader: DataLoader for training data
+    :param optimizer: Optimizer for updating model weights
+    :param device: Torch device (CPU or CUDA)
+    :return: Average training loss for the epoch
+    """
+
     model.train()
     total_loss = 0
 
@@ -66,6 +76,15 @@ def train_epoch(model, dataloader, optimizer, device):
 
 
 def validate_epoch(model, dataloader, device):
+    """
+    Evaluates the model on the validation dataset and computes the average loss.
+
+    :param model: PyTorch model to evaluate
+    :param dataloader: DataLoader for validation data
+    :param device: Torch device (CPU or CUDA)
+    :return: Average validation loss for the epoch
+    """
+
     model.eval()
     total_loss = 0
 
@@ -95,10 +114,20 @@ def validate_epoch(model, dataloader, device):
 
 
 def main():
+    """
+    Main training routine for the NMT model.
+
+    Handles model instantiation, checkpoint loading, data preparation,
+    training, validation, and saving checkpoints.
+
+    :return: None
+    """
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     tokenizer = T5Tokenizer.from_pretrained(config.MODEL_NAME)
 
+    # ======== model instantiation ========
     if config.USE_POINTER:
         lexicon_df = pd.read_csv(config.LEXICON_CLEANED_CSV)
         lexicon = dict(zip(lexicon_df['Iloko'], lexicon_df["English"]))
@@ -112,6 +141,17 @@ def main():
 
     model.to(device)
 
+    # ======== load from a checkpoint ========
+    checkpoint_folder = f"{config.CHECKPOINT_DIR}\\{'LexiconPointerNMT' if config.USE_POINTER else 'BaseNMT'}"
+
+    try:
+        model, start_epoch = load_latest_checkpoint(model, checkpoint_folder)
+        print(f"Resuming training from epoch {start_epoch + 1}...")
+    except FileNotFoundError:
+        start_epoch = 0
+        print("No checkpoint found, starting training from scratch...")
+
+    # ======== prepare data ========
     data_module = TranslationDataModule(
         csv_path=config.PARALLEL_CLEANED_CSV,
         tokenizer=tokenizer,
@@ -124,17 +164,20 @@ def main():
     )
     data_module.setup()
 
+    # ======== data loader for training and validation  ========
     train_loader = data_module.train_dataloader()
     validation_loader = data_module.validation_dataloader()
 
+    # ======== optimizer ========
     optimizer = AdamW(
         model.parameters(),
         lr=config.LEARNING_RATE,
         weight_decay=config.WEIGHT_DECAY,
     )
 
+    # ======== training cycle ========
     best_val_loss = float("inf")
-    for epoch in range(config.NUM_EPOCHS):
+    for epoch in range(start_epoch, config.NUM_EPOCHS):
         print(f"===================================")
         print(f"Epoch {epoch + 1}/{config.NUM_EPOCHS}")
 
@@ -144,6 +187,7 @@ def main():
         print(f"Train Loss: {train_loss:.4f} | Validation Loss: {val_loss:.4f}")
         print(f"===================================")
 
+        # ======== checkpoint saving ========
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
@@ -154,6 +198,7 @@ def main():
         )
 
     print("Training Complete...")
+
 
 if __name__ == "__main__":
     main()
