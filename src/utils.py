@@ -8,7 +8,6 @@ import os
 import torch
 from pathlib import Path
 
-
 def save_checkpoint(model, tokenizer, save_path, filename):
     """
     Saves the model state, tokenizer reference, and optional lexicon to a checkpoint file.
@@ -31,7 +30,6 @@ def save_checkpoint(model, tokenizer, save_path, filename):
 
     torch.save(checkpoint, f"{save_path}/{filename}")
     print(f"Model saved to: {save_path}\\{filename}")
-
 
 def load_latest_checkpoint(model, checkpoint_dir):
     """

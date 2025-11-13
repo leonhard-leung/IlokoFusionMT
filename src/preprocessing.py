@@ -20,10 +20,7 @@ Usage:
 import re
 import pandas as pd
 
-
-# =============
-# TEXT CLEANING
-# =============
+# ======== text cleaning ========
 
 def _whitespace_cleaning(text: str) -> str:
     if not isinstance(text, str):
@@ -46,10 +43,7 @@ def clean_text(text: str) -> str:
     text = _whitespace_cleaning(text)
     return text
 
-
-# ==================
-# DATAFRAME PIPELINE
-# ==================
+# ======== dataframe pipeline ========
 
 def clean_dataframe(
         df: pd.DataFrame,
@@ -69,9 +63,7 @@ def clean_dataframe(
     return df
 
 
-# =============
-# FILE HANDLING
-# =============
+# ======== file handling ========
 
 def load_csv(path: str) -> pd.DataFrame:
     return pd.read_csv(path)

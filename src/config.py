@@ -1,9 +1,7 @@
 from pathlib import Path
 
 
-# =========================
-# Paths
-# =========================
+# ======== paths ========
 DATA_DIR = Path("../data")
 RAW_PARALLEL_CSV = DATA_DIR / "raw/parallel.csv"
 RAW_LEXICON_CSV = DATA_DIR / "raw/lexicon.csv"
@@ -12,33 +10,25 @@ PROCESSED_DIR = DATA_DIR / "processed"
 PARALLEL_CLEANED_CSV = PROCESSED_DIR / "parallel_cleaned.csv"
 LEXICON_CLEANED_CSV = PROCESSED_DIR / "lexicon_cleaned.csv"
 
-SAVE_DIR = Path("../checkpoints")
+CHECKPOINT_DIR = Path("../checkpoints")
 
-# =============
-# Model
-# =============
+# ======== model ========
 MODEL_NAME = "t5-base"
 MAX_SEQ_LEN = 128
 
-# ===================
-# Training Parameters
-# ===================
+# ======== hyperparameters ========
 BATCH_SIZE = 32
-NUM_EPOCHS = 10
-LEARNING_RATE = 2e-5
+NUM_EPOCHS = 100
+LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
 
-# =============
-# Data
-# =============
+# ======== data ========
 VALIDATION_SPLIT = 0.2
 EVALUATION_SPLIT = 0.1
 SHUFFLE = True
 NUM_WORKERS = 4
 PIN_MEMORY = True
 
-# =============
-# Pointer
-# =============
-USE_POINTER = True
+# ======== pointer ========
+USE_POINTER = True      # True for LexiconPointerNMT and False for BaseNMT
 POINTER_THRESHOLD = 0.5

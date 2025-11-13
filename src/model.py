@@ -15,7 +15,6 @@ import torch
 import torch.nn as nn
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 
-
 class BaseNMT(nn.Module):
     def __init__(self, model_name="t5-base"):
         super().__init__()
@@ -29,7 +28,6 @@ class BaseNMT(nn.Module):
             output_hidden_states=True
         )
         return outputs
-
 
 class LexiconPointerNMT(nn.Module):
     def __init__(self, base_model, lexicon: dict, tokenizer: T5Tokenizer):

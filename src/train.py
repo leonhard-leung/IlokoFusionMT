@@ -33,7 +33,6 @@ import config
 from src.datamodule import TranslationDataModule
 from utils import load_latest_checkpoint, save_checkpoint
 
-
 def train_epoch(model, dataloader, optimizer, device):
     """
     Performs one epoch of training on the given model using the provided dataloader.
@@ -74,7 +73,6 @@ def train_epoch(model, dataloader, optimizer, device):
 
     return total_loss / len(dataloader)
 
-
 def validate_epoch(model, dataloader, device):
     """
     Evaluates the model on the validation dataset and computes the average loss.
@@ -112,7 +110,6 @@ def validate_epoch(model, dataloader, device):
 
         return total_loss / len(dataloader)
 
-
 def main():
     """
     Main training routine for the NMT model.
@@ -127,7 +124,7 @@ def main():
 
     tokenizer = T5Tokenizer.from_pretrained(config.MODEL_NAME)
 
-    # ======== model instantiation ========
+    # model instantiation
     if config.USE_POINTER:
         lexicon_df = pd.read_csv(config.LEXICON_CLEANED_CSV)
         lexicon = dict(zip(lexicon_df['Iloko'], lexicon_df["English"]))
@@ -141,7 +138,7 @@ def main():
 
     model.to(device)
 
-    # ======== load from a checkpoint ========
+    # load from a checkpoint
     checkpoint_folder = f"{config.CHECKPOINT_DIR}\\{'LexiconPointerNMT' if config.USE_POINTER else 'BaseNMT'}"
 
     try:
@@ -151,7 +148,7 @@ def main():
         start_epoch = 0
         print("No checkpoint found, starting training from scratch...")
 
-    # ======== prepare data ========
+    # prepare data
     data_module = TranslationDataModule(
         csv_path=config.PARALLEL_CLEANED_CSV,
         tokenizer=tokenizer,
@@ -164,18 +161,18 @@ def main():
     )
     data_module.setup()
 
-    # ======== data loader for training and validation  ========
+    # data loader for training and validation
     train_loader = data_module.train_dataloader()
     validation_loader = data_module.validation_dataloader()
 
-    # ======== optimizer ========
+    # optimizer
     optimizer = AdamW(
         model.parameters(),
         lr=config.LEARNING_RATE,
         weight_decay=config.WEIGHT_DECAY,
     )
 
-    # ======== training cycle ========
+    # training cycle
     best_val_loss = float("inf")
     for epoch in range(start_epoch, config.NUM_EPOCHS):
         print(f"===================================")
@@ -198,7 +195,6 @@ def main():
         )
 
     print("Training Complete...")
-
 
 if __name__ == "__main__":
     main()

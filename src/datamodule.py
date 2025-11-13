@@ -14,7 +14,6 @@ Notes:
     - Handles train, test, and validation splits.
 """
 
-import torch
 from torch.utils.data import Dataset, DataLoader
 from preprocessing import load_csv
 from sklearn.model_selection import train_test_split
