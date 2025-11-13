@@ -50,9 +50,9 @@ class TranslationDataset(Dataset):
         labels[labels == self.tokenizer.pad_token_id] = -100
 
         return {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "labels": labels
+            "input_ids": input_ids.long(),
+            "attention_mask": attention_mask.long(),
+            "labels": labels.long()
         }
 
 class TranslationDataModule:

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 # ======== paths ========
 DATA_DIR = Path("../data")
 RAW_PARALLEL_CSV = DATA_DIR / "raw/parallel.csv"
@@ -14,13 +13,18 @@ CHECKPOINT_DIR = Path("../checkpoints")
 
 # ======== model ========
 MODEL_NAME = "t5-base"
-MAX_SEQ_LEN = 128
+MAX_SEQ_LEN = 87
 
 # ======== hyperparameters ========
 BATCH_SIZE = 32
 NUM_EPOCHS = 100
 LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 1e-5
+WEIGHT_DECAY = 0.01
+
+# ======== regularization ========
+DROPOUT = 0
+ATTENTION_DROPOUT = 0
+ACTIVATION_DROPOUT = 0
 
 # ======== data ========
 VALIDATION_SPLIT = 0.2

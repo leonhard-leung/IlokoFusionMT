@@ -13,12 +13,20 @@ LexiconPointerNMT:
 
 import torch
 import torch.nn as nn
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Config
 
 class BaseNMT(nn.Module):
-    def __init__(self, model_name="t5-base"):
+    def __init__(self, model_name="t5-base", dropout=0, attention_dropout=0, activation_dropout=0):
         super().__init__()
-        self.model = T5ForConditionalGeneration.from_pretrained(model_name)
+
+        config = T5Config.from_pretrained(
+            model_name,
+            dropout_rate=dropout,
+            attention_dropout_rate=attention_dropout,
+            activation_dropout_rate=activation_dropout,
+        )
+
+        self.model = T5ForConditionalGeneration.from_pretrained(model_name, config=config)
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.model(

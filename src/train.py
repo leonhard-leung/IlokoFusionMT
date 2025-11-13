@@ -66,6 +66,7 @@ def train_epoch(model, dataloader, optimizer, device):
 
         loss = outputs.loss
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
 
         total_loss += loss.item()
@@ -125,21 +126,27 @@ def main():
     tokenizer = T5Tokenizer.from_pretrained(config.MODEL_NAME)
 
     # model instantiation
+    base_model = BaseNMT(
+        model_name=config.MODEL_NAME,
+        dropout=config.DROPOUT,
+        attention_dropout=config.ATTENTION_DROPOUT,
+        activation_dropout=config.ACTIVATION_DROPOUT,
+    )
+
     if config.USE_POINTER:
         lexicon_df = pd.read_csv(config.LEXICON_CLEANED_CSV)
         lexicon = dict(zip(lexicon_df['Iloko'], lexicon_df["English"]))
 
-        base = BaseNMT(model_name=config.MODEL_NAME)
-        model = LexiconPointerNMT(base, lexicon, tokenizer)
+        model = LexiconPointerNMT(base_model, lexicon, tokenizer)
         print("Using LexiconPointerNMT")
     else:
-        model = BaseNMT(model_name=config.MODEL_NAME)
+        model = base_model
         print("Using BaseNMT")
 
     model.to(device)
 
     # load from a checkpoint
-    checkpoint_folder = f"{config.CHECKPOINT_DIR}\\{'LexiconPointerNMT' if config.USE_POINTER else 'BaseNMT'}"
+    checkpoint_folder = config.CHECKPOINT_DIR / ("LexiconPointerNMT" if config.USE_POINTER else "BaseNMT")
 
     try:
         model, start_epoch = load_latest_checkpoint(model, checkpoint_folder)
@@ -187,12 +194,11 @@ def main():
         # ======== checkpoint saving ========
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-
-        save_checkpoint(
-            model, tokenizer,
-            f"{config.CHECKPOINT_DIR}\\{'LexiconPointerNMT' if config.USE_POINTER else 'BaseNMT'}",
-            f"epoch-{epoch + 1}.pt"
-        )
+            save_checkpoint(
+                model, tokenizer,
+                checkpoint_folder,
+                f"epoch-{epoch + 1}.pt"
+            )
 
     print("Training Complete...")
 
