@@ -43,7 +43,6 @@ def train_epoch(model, dataloader, optimizer, device):
     :param device: Torch device (CPU or CUDA)
     :return: Average training loss for the epoch
     """
-
     model.train()
     total_loss = 0
 
@@ -54,19 +53,15 @@ def train_epoch(model, dataloader, optimizer, device):
         labels = batch["labels"].to(device)
 
         optimizer.zero_grad()
-
         outputs = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             labels=labels,
         )
 
-        if config.USE_POINTER:
-            outputs, pointer_prob = outputs
-
         loss = outputs.loss
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
 
         total_loss += loss.item()
@@ -83,12 +78,10 @@ def validate_epoch(model, dataloader, device):
     :param device: Torch device (CPU or CUDA)
     :return: Average validation loss for the epoch
     """
-
     model.eval()
     total_loss = 0
 
     with torch.no_grad():
-
         val_bar = tqdm(dataloader, desc="Validation")
         for batch in val_bar:
             input_ids = batch["input_ids"].to(device)
@@ -100,9 +93,6 @@ def validate_epoch(model, dataloader, device):
                 attention_mask=attention_mask,
                 labels=labels,
             )
-
-            if config.USE_POINTER:
-                outputs, pointer_prob = outputs
 
             loss = outputs.loss
             total_loss += loss.item()
@@ -120,7 +110,6 @@ def main():
 
     :return: None
     """
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     tokenizer = T5Tokenizer.from_pretrained(config.MODEL_NAME)
@@ -128,10 +117,19 @@ def main():
     # model instantiation
     base_model = BaseNMT(
         model_name=config.MODEL_NAME,
-        dropout=config.DROPOUT,
-        attention_dropout=config.ATTENTION_DROPOUT,
-        activation_dropout=config.ACTIVATION_DROPOUT,
+        vocab_size=config.VOCAB_SIZE,
+        d_model=config.D_MODEL,
+        d_kv=config.D_KV,
+        d_ff=config.D_FF,
+        num_layers=config.NUM_LAYERS,
+        num_decoder_layers=config.NUM_DECODER_LAYERS,
+        num_heads=config.NUM_HEADS,
+        dropout_rate=config.DROPOUT_RATE,
+        feed_forward_proj=config.FEED_FORWARD_PROJ,
     )
+
+    if config.FREEZE_LAYERS:
+        base_model.freeze_encoder()
 
     if config.USE_POINTER:
         lexicon_df = pd.read_csv(config.LEXICON_CLEANED_CSV)
@@ -181,6 +179,7 @@ def main():
 
     # training cycle
     best_val_loss = float("inf")
+    epochs_without_improvement = 0
     for epoch in range(start_epoch, config.NUM_EPOCHS):
         print(f"===================================")
         print(f"Epoch {epoch + 1}/{config.NUM_EPOCHS}")
@@ -192,13 +191,22 @@ def main():
         print(f"===================================")
 
         # ======== checkpoint saving ========
-        if val_loss < best_val_loss:
+        if val_loss < (best_val_loss - config.EARLY_STOPPING_MIN_DELTA):
             best_val_loss = val_loss
+            epochs_without_improvement = 0
+
             save_checkpoint(
                 model, tokenizer,
                 checkpoint_folder,
                 f"epoch-{epoch + 1}.pt"
             )
+        else:
+            epochs_without_improvement += 1
+            print(f"No improvement for {epochs_without_improvement} epoch(s)")
+
+        if config.EARLY_STOPPING and epochs_without_improvement >= 5:
+            print(f"Early stopping at epoch {epoch + 1}...")
+            break
 
     print("Training Complete...")
 
