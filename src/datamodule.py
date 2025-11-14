@@ -14,7 +14,7 @@ Notes:
     - Handles train, test, and validation splits.
 """
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from preprocessing import load_csv
 from sklearn.model_selection import train_test_split
 
@@ -111,14 +111,26 @@ class TranslationDataModule:
             src_eval, tgt_eval, self.tokenizer, max_len=self.max_len
         )
 
-    def train_dataloader(self):
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            shuffle=True,
-            num_workers=self.num_workers,
-            pin_memory=self.pin_memory
-        )
+    def train_dataloader(self, oversample: bool = True):
+        if oversample:
+            weights = [1.0] * len(self.train_dataset)
+            sampler = WeightedRandomSampler(weights, num_samples=len(self.train_dataset), replacement=True)
+
+            return DataLoader(
+                self.train_dataset,
+                batch_size=self.batch_size,
+                sampler=sampler,
+                num_workers=self.num_workers,
+                pin_memory=self.pin_memory
+            )
+        else:
+            return DataLoader(
+                self.train_dataset,
+                batch_size=self.batch_size,
+                shuffle=True,
+                num_workers=self.num_workers,
+                pin_memory=self.pin_memory
+            )
 
     def validation_dataloader(self):
         return DataLoader(
