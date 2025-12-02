@@ -136,7 +136,12 @@ def main():
     checkpoint_folder = config.CHECKPOINT_DIR / ("LexiconPointerNMT" if config.USE_POINTER else "BaseNMT")
 
     try:
-        model, start_epoch = load_latest_checkpoint(model, checkpoint_folder)
+        model, tokenizer, use_pointer, start_epoch = load_latest_checkpoint(
+            checkpoint_folder,
+            base_model_class=BaseNMT,
+            device=device,
+            dropout_rate=config.DROPOUT_RATE
+        )
         print(f"Resuming training from epoch {start_epoch + 1}...")
     except FileNotFoundError:
         start_epoch = 0
