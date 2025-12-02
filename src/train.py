@@ -115,18 +115,7 @@ def main():
     tokenizer = T5Tokenizer.from_pretrained(config.MODEL_NAME)
 
     # model instantiation
-    base_model = BaseNMT(
-        model_name=config.MODEL_NAME,
-        vocab_size=config.VOCAB_SIZE,
-        d_model=config.D_MODEL,
-        d_kv=config.D_KV,
-        d_ff=config.D_FF,
-        num_layers=config.NUM_LAYERS,
-        num_decoder_layers=config.NUM_DECODER_LAYERS,
-        num_heads=config.NUM_HEADS,
-        dropout_rate=config.DROPOUT_RATE,
-        feed_forward_proj=config.FEED_FORWARD_PROJ,
-    )
+    base_model = BaseNMT(dropout_rate=config.DROPOUT_RATE)
 
     if config.FREEZE_LAYERS:
         base_model.freeze_encoder()
