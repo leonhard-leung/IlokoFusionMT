@@ -30,7 +30,7 @@ class BaseNMT(nn.Module):
         """
         super().__init__()
         config = T5Config.from_pretrained(model_name, **configs)
-        self.model = T5ForConditionalGeneration(config=config)
+        self.model = T5ForConditionalGeneration.from_pretrained(model_name, config=config)
 
     def forward(self, input_ids, attention_mask, labels=None):
         """
