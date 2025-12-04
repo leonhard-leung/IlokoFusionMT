@@ -190,9 +190,11 @@ def main():
             epochs_without_improvement = 0
 
             save_checkpoint(
-                model, tokenizer,
+                model,
+                tokenizer,
                 checkpoint_folder,
-                f"epoch-{epoch + 1}.pt"
+                f"epoch-{epoch + 1}.pt",
+                config.USE_POINTER,
             )
         else:
             epochs_without_improvement += 1
