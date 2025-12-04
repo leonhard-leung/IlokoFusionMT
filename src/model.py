@@ -58,6 +58,15 @@ class BaseNMT(nn.Module):
         for param in self.model.encoder.parameters():
             param.requires_grad = False
 
+    def generate_text(self, **kwargs):
+        """
+        Generates translations from the BaseNMT model using the HuggingFace `generate` method.
+
+        :param kwargs: Keyword arguments passed directly to `self.model.generate`
+        :return: Generated token IDs or sequences, depending on the arguments provided
+        """
+        return self.model.generate(**kwargs)
+
     @property
     def d_model(self):
         return self.model.config.d_model
@@ -101,12 +110,12 @@ class LexiconPointerNMT(nn.Module):
         """
         return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    def decode_with_lexicon(self, input_sentence, max_length=128, pointer_threshold=0.5):
+    def decode_with_lexicon(self, input_sentences, max_length=128, pointer_threshold=0.5):
         """
         Generates translation and optionally replaces tokens using the lexicon based on
         the pointer probability threshold.
 
-        :param input_sentence: Source sentence to translate
+        :param input_sentences: A single sentence (str) or list of sentences (List[str])
         :param max_length:Maximum length of the generated sentence
         :param pointer_threshold: Minimum pointer probability to trigger lexicon replacement
         :return: Translated sentence with OOV tokens replaced if applicable
@@ -114,39 +123,61 @@ class LexiconPointerNMT(nn.Module):
         self.model.eval()
         self.pointer_layer.eval()
 
-        inputs = self.tokenizer(input_sentence, return_tensors="pt").input_ids
+        if isinstance(input_sentences, str):
+            input_sentences = [input_sentences]
 
-        outputs = self.model.generate(
-            input_ids=inputs,
-            max_length=max_length,
-            output_hidden_states=True,
-            return_dict_in_generate=True,
-            output_scores=True,
-        )
+        all_decoded_texts = []
 
-        generated_ids = outputs.sequences
-        decoded_tokens = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        for input_sentence in input_sentences:
+            inputs = self.tokenizer(input_sentence, return_tensors="pt").input_ids
 
-        pointer_probs = []
-        generated_ids_no_eos = generated_ids[:, :-1]
-        for i in range(generated_ids_no_eos.size(1)):
-            decoder_out = self.model(
+            outputs = self.model.generate(
                 input_ids=inputs,
-                decoder_input_ids=generated_ids_no_eos[:, :i + 1],
+                max_length=max_length,
                 output_hidden_states=True,
+                return_dict_in_generate=True,
+                output_scores=True,
             )
 
-            hidden = decoder_out.hidden_states[-1][:, -1, :]
-            prob = torch.sigmoid(self.pointer_layer(hidden)).item()
-            pointer_probs.append(prob)
+            generated_ids = outputs.sequences
+            decoded_tokens = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-        tokens = decoded_tokens.split()
-        for i, token in enumerate(tokens):
-            if token in self.lexicon and i < len(pointer_probs):
-                if pointer_probs[i] > pointer_threshold:
-                    tokens[i] = self.lexicon[token]
+            pointer_probs = []
+            generated_ids_no_eos = generated_ids[:, :-1]
+            for i in range(generated_ids_no_eos.size(1)):
+                decoder_out = self.model(
+                    input_ids=inputs,
+                    decoder_input_ids=generated_ids_no_eos[:, :i + 1],
+                    output_hidden_states=True,
+                )
 
-        return " ".join(tokens)
+                hidden = decoder_out.hidden_states[-1][:, -1, :]
+                prob = torch.sigmoid(self.pointer_layer(hidden)).item()
+                pointer_probs.append(prob)
+
+            tokens = decoded_tokens.split()
+            for i, token in enumerate(tokens):
+                if token in self.lexicon and i < len(pointer_probs):
+                    if pointer_probs[i] > pointer_threshold:
+                        tokens[i] = self.lexicon[token]
+
+            all_decoded_texts.append(" ".join(tokens))
+
+        return all_decoded_texts[0] if len(all_decoded_texts) == 1 else all_decoded_texts
+
+    def generate_text(self, input_sentence=None, **kwargs):
+        """
+        If input sentence is provided, use lexicon-aware decoding.
+        Otherwise, directly call base output_model generation.
+
+        :param input_sentence: A single source sentence or list of sentences. If none, standard generation is used.
+        :param kwargs: Additional arguments passed to `decode_with_lexicon` or `BaseNMT.generate_text`
+        :return: A single decoded sentence or a list of decoded sentences based on input_sentence.
+        """
+        if input_sentence is not None:
+            return self.decode_with_lexicon(input_sentence, **kwargs)
+        else:
+            return self.model.generate_text(**kwargs)
 
     # Future Work:
     # - Replace the fixed threshold pointer with a trainable pointer when dataset size allows.
