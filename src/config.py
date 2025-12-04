@@ -17,17 +17,17 @@ DROPOUT_RATE = 0.2
 MAX_SEQ_LEN = 87
 
 # ======== hyperparameters ========
-BATCH_SIZE = 8
-NUM_EPOCHS = 200
+BATCH_SIZE = 16
+NUM_EPOCHS = 100
 LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 0.1
+WEIGHT_DECAY = 1e-3
 FREEZE_LAYERS = True
 
 # ======== data ========
 VALIDATION_SPLIT = 0.2
 EVALUATION_SPLIT = 0.1
 SHUFFLE = True
-NUM_WORKERS = 4
+NUM_WORKERS = 7
 PIN_MEMORY = True
 
 # ======== pointer ========
