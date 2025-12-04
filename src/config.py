@@ -12,19 +12,16 @@ LEXICON_CLEANED_CSV = PROCESSED_DIR / "lexicon_cleaned.csv"
 CHECKPOINT_DIR = Path("../checkpoints")
 
 # ======== model ========
-MODEL_NAME = "t5-base"
+MODEL_NAME = "google/flan-t5-small" # or google/t5-efficient-mini flan-t5-small
+DROPOUT_RATE = 0.2
 MAX_SEQ_LEN = 87
 
 # ======== hyperparameters ========
-BATCH_SIZE = 32
-NUM_EPOCHS = 100
+BATCH_SIZE = 8
+NUM_EPOCHS = 200
 LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 0.01
-
-# ======== regularization ========
-DROPOUT = 0
-ATTENTION_DROPOUT = 0
-ACTIVATION_DROPOUT = 0
+WEIGHT_DECAY = 0.1
+FREEZE_LAYERS = True
 
 # ======== data ========
 VALIDATION_SPLIT = 0.2
@@ -36,3 +33,7 @@ PIN_MEMORY = True
 # ======== pointer ========
 USE_POINTER = True      # True for LexiconPointerNMT and False for BaseNMT
 POINTER_THRESHOLD = 0.5
+
+# ======== early stopping ========
+EARLY_STOPPING = True
+EARLY_STOPPING_MIN_DELTA = 0.001
