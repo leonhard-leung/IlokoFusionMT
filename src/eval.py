@@ -44,13 +44,13 @@ def evaluate_metrics(model, dataloader, tokenizer, device):
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"]
 
-            generated = model.model.generate(
+            source_sentences = [tokenizer.decode(ids, skip_special_tokens=True) for ids in input_ids]
+            pred_texts = model.generate_text(
+                input_sentence=source_sentences,
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                max_length=config.MAX_SEQ_LEN,
+                max_length=config.MAX_SEQ_LEN
             )
-
-            pred_texts = tokenizer.batch_decode(generated, skip_special_tokens=True)
 
             label_texts = []
             for seq in labels:
