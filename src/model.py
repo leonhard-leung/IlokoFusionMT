@@ -110,12 +110,14 @@ class LexiconPointerNMT(nn.Module):
         """
         return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    def decode_with_lexicon(self, input_sentences, max_length=128, pointer_threshold=0.5):
+    def decode_with_lexicon(self, input_sentences=None, input_ids=None, attention_mask=None, max_length=128, pointer_threshold=0.5):
         """
         Generates translation and optionally replaces tokens using the lexicon based on
         the pointer probability threshold.
 
         :param input_sentences: A single sentence (str) or list of sentences (List[str])
+        :param input_ids: Pre-tokenized input IDs
+        :param attention_mask: Attention mask corresponding to input_ids
         :param max_length:Maximum length of the generated sentence
         :param pointer_threshold: Minimum pointer probability to trigger lexicon replacement
         :return: Translated sentence with OOV tokens replaced if applicable
@@ -123,16 +125,27 @@ class LexiconPointerNMT(nn.Module):
         self.model.eval()
         self.pointer_layer.eval()
 
-        if isinstance(input_sentences, str):
-            input_sentences = [input_sentences]
+        if input_ids is None:
+            if isinstance(input_sentences, str):
+                input_sentences = [input_sentences]
+            inputs = self.tokenizer(input_sentences, return_tensors="pt", padding=True)
+            input_ids = inputs.input_ids
+            if attention_mask is None:
+                attention_mask = inputs.attention_mask
+        device = next(self.model.parameters()).device
+        input_ids = input_ids.to(device)
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(device)
 
         all_decoded_texts = []
 
-        for input_sentence in input_sentences:
-            inputs = self.tokenizer(input_sentence, return_tensors="pt").input_ids
+        for i in range(input_ids.size(0)):
+            single_input_ids = input_ids[i].unsqueeze(0)
+            single_attention_mask = attention_mask[i].unsqueeze(0) if attention_mask is not None else None
 
             outputs = self.model.generate(
-                input_ids=inputs,
+                input_ids=single_input_ids,
+                attention_mask=single_attention_mask,
                 max_length=max_length,
                 output_hidden_states=True,
                 return_dict_in_generate=True,
@@ -144,22 +157,21 @@ class LexiconPointerNMT(nn.Module):
 
             pointer_probs = []
             generated_ids_no_eos = generated_ids[:, :-1]
-            for i in range(generated_ids_no_eos.size(1)):
+            for j in range(generated_ids_no_eos.size(1)):
                 decoder_out = self.model(
-                    input_ids=inputs,
-                    decoder_input_ids=generated_ids_no_eos[:, :i + 1],
+                    input_ids=single_input_ids,
+                    decoder_input_ids=generated_ids_no_eos[:, :j + 1],
                     output_hidden_states=True,
                 )
-
                 hidden = decoder_out.hidden_states[-1][:, -1, :]
                 prob = torch.sigmoid(self.pointer_layer(hidden)).item()
                 pointer_probs.append(prob)
 
             tokens = decoded_tokens.split()
-            for i, token in enumerate(tokens):
-                if token in self.lexicon and i < len(pointer_probs):
-                    if pointer_probs[i] > pointer_threshold:
-                        tokens[i] = self.lexicon[token]
+            for k, token in enumerate(tokens):
+                if token in self.lexicon and k < len(pointer_probs):
+                    if pointer_probs[k] > pointer_threshold:
+                        tokens[k] = self.lexicon[token]
 
             all_decoded_texts.append(" ".join(tokens))
 
