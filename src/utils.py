@@ -8,10 +8,11 @@ import os
 import torch
 from pathlib import Path
 from model import LexiconPointerNMT
+from transformers import T5Tokenizer
 
 def save_checkpoint(model, tokenizer, save_path, filename, use_pointer=False):
     """
-    Saves the model state, tokenizer object, lexicon, and pointer flag to a checkpoint file.
+    Saves the model state, tokenizer name, lexicon, and pointer flag to a checkpoint file.
 
     :param model: PyTorch model whose state_dict will be saved
     :param tokenizer: Tokenizer used with the model
@@ -24,8 +25,8 @@ def save_checkpoint(model, tokenizer, save_path, filename, use_pointer=False):
 
     checkpoint = {
         "model_state_dict": model.state_dict(),
-        "tokenizer": tokenizer,
-        "use_pointer": use_pointer
+        "tokenizer_name": tokenizer.name_or_path,
+        "use_pointer": use_pointer,
     }
 
     if hasattr(model, "lexicon"):
@@ -58,7 +59,7 @@ def load_latest_checkpoint(checkpoint_dir, base_model_class=None, device="cpu", 
     checkpoint = torch.load(latest_file, map_location=device)
 
     use_pointer = checkpoint.get("use_pointer", False)
-    tokenizer = checkpoint["tokenizer"]
+    tokenizer = T5Tokenizer.from_pretrained(checkpoint["tokenizer_name"])
 
     if base_model_class is None:
         raise ValueError("base_model_class must be provided to load the model")
